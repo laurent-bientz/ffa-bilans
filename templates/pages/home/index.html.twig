@@ -193,7 +193,7 @@
                                 </th>
                                 {% for key, value in breakpoints[0] %}
                                     {% if key starts with 'nb_' %}
-                                        <th class="text-center" scope="col"><{{ (key|split('nb_', 2)[1] * 60)|time_format(false) }}</th>
+                                        <th class="text-center" scope="col">&lt;{{ (key|split('nb_', 2)[1] * 60)|time_format(false) }}</th>
                                     {% endif %}
                                 {% endfor %}
                             </tr>
