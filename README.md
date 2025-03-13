@@ -15,6 +15,8 @@ cp docker/db/.env.dist docker/db/.env
 cp docker/php/.env.dist docker/php/.env
 ```
 
+## Boostrap
+
 Lancer les commandes suivantes dans un terminal :
 
 ```console

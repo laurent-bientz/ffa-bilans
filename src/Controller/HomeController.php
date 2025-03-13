@@ -24,11 +24,12 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('app_home_index', [$formName => ['trial' => Trial::D_42K->value]]);
         }
 
-        $metrics = $em->getRepository(Performance::class)->getMetrics($request->query->all($formSearch->getName()) ?? []);
-
         return $this->render('pages/home/index.html.twig', [
             'formSearch' => $formSearch->createView(),
-            'metrics' => $metrics,
+            'group' => $formSearch->get('group')->getData(),
+            'metrics' => $em->getRepository(Performance::class)->getMetrics($request->query->all($formSearch->getName()) ?? []),
+            'evolution' => $em->getRepository(Performance::class)->getMetrics($request->query->all($formSearch->getName()) ?? [], 'year'),
+            'breakpoints' => '1' === $formSearch->get('breakpoints')->getData() ? $em->getRepository(Performance::class)->getBreakpoints($request->query->all($formSearch->getName()) ?? [], $formSearch->get('group')->getData()) : [],
         ]);
     }
 }

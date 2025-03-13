@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Performance;
+use App\Enum\Trial;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\Persistence\ManagerRegistry;
@@ -62,7 +63,7 @@ class PerformanceRepository extends ServiceEntityRepository
             ->getResult(AbstractQuery::HYDRATE_SCALAR_COLUMN);
     }
 
-    public function getMetrics(array $filters = [])
+    public function getMetrics(array $filters = [], ?string $group = null)
     {
         $qb = $this->createQueryBuilder('p')
             ->select('COUNT(p.time) AS total')
@@ -89,9 +90,55 @@ class PerformanceRepository extends ServiceEntityRepository
             $qb->andWhere('p.location = :location')->setParameter('location', $filters['location']);
         }
 
-        return $qb
-            ->getQuery()
-            ->getSingleResult(AbstractQuery::HYDRATE_ARRAY);
+        if (null !== $group) {
+            $qb->addSelect('p.' . $group . ' AS x')
+                ->groupBy('p.' . $group)
+                ->orderBy('p.' . $group, 'ASC');
+            ;
+        }
+
+        return (null !== $group)
+            ? $qb->getQuery()->getResult(AbstractQuery::HYDRATE_ARRAY)
+            : $qb->getQuery()->getSingleResult(AbstractQuery::HYDRATE_ARRAY);
+    }
+
+    public function getBreakpoints(array $filters = [], ?string $group = null)
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p) AS total');
+
+        $breakpoints = Trial::getBreakPoints(Trial::tryFrom($filters['trial']) ?? Trial::D_42K);
+        foreach($breakpoints as $breakpoint) {
+            $qb->addSelect('SUM(IFELSE(p.time < ' . $breakpoint * 60 . ', 1, 0)) AS nb_' . $breakpoint);
+        }
+
+        if (!empty($filters['trial'])) {
+            $qb->andWhere('p.trial = :trial')->setParameter('trial', $filters['trial']);
+        }
+        if (!empty($filters['year'])) {
+            $qb->andWhere('p.year = :year')->setParameter('year', $filters['year']);
+        }
+        if (!empty($filters['gender'])) {
+            $qb->andWhere('p.gender = :gender')->setParameter('gender', $filters['gender']);
+        }
+        if (!empty($filters['category'])) {
+            $qb->andWhere('p.category = :category')->setParameter('category', $filters['category']);
+        }
+        if (!empty($filters['birth'])) {
+            $qb->andWhere('p.birth = :birth')->setParameter('birth', $filters['birth']);
+        }
+        if (!empty($filters['location'])) {
+            $qb->andWhere('p.location = :location')->setParameter('location', $filters['location']);
+        }
+
+        if (null !== $group) {
+            $qb->addSelect('p.' . $group . ' AS x')
+                ->groupBy('p.' . $group)
+                ->orderBy('p.' . $group, 'ASC');
+            ;
+        }
+
+        return $qb->getQuery()->getResult(AbstractQuery::HYDRATE_ARRAY);
     }
 
     public function deleteOlder(int $trial, string $year)

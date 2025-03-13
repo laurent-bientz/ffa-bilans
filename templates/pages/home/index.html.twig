@@ -2,6 +2,12 @@
 
 {% block css %}
     {{ parent() }}
+    <style>
+        {% if group == 'year' %}
+            .table-responsive{height:600px;overflow:scroll;}
+        {% endif %}
+        thead tr:nth-child(1) th{background: white; position: sticky;top: 0;z-index: 10;}
+    </style>
 {% endblock %}
 
 {% block javascript %}
@@ -14,7 +20,7 @@
         <h1>Bilans FFA</h1>
         <hr />
 
-        {{ form_start(formSearch, { attr: { novalidate: "novalidate"} } ) }}
+        {{ form_start(formSearch, { attr: { id: "form_search", novalidate: "novalidate"} } ) }}
         <div class="row">
             <div class="col-sm">
                 {{ form_row(formSearch.trial) }}
@@ -34,7 +40,7 @@
             <div class="col-sm">
                 <div class="mb-3">
                     <label class="form-label">&nbsp;</label>
-                    <button type="submit" class="btn btn-primary d-block" style="width:100%;">Filtrer</button>
+                    <button type="submit" onclick="document.getElementById('f_breakpoints').value = 0;document.getElementById('form_search').submit();" class="btn btn-primary d-block" style="width:100%;">Filtrer</button>
                 </div>
             </div>
         </div>
@@ -44,10 +50,10 @@
         <h2>Metrics</h2>
         <div class="row">
             <div class="col-sm">
-                <div class="card text-white bg-secondary mb-3">
-                    <div class="card-header">Total finishers</div>
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-header">Temps mini</div>
                     <div class="card-body">
-                        <h1 class="card-title text-center">{{ metrics.total|number_format(0, '.', ' ') }}</h1>
+                        <h1 class="card-title text-center">{{ metrics.min|time_format }}</h1>
                     </div>
                 </div>
             </div>
@@ -60,14 +66,6 @@
                 </div>
             </div>
             <div class="col-sm">
-                <div class="card text-white bg-success mb-3">
-                    <div class="card-header">Temps mini</div>
-                    <div class="card-body">
-                        <h1 class="card-title text-center">{{ metrics.min|time_format }}</h1>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm">
                 <div class="card text-white bg-warning mb-3">
                     <div class="card-header">Temps maxi</div>
                     <div class="card-body">
@@ -75,7 +73,139 @@
                     </div>
                 </div>
             </div>
+            <div class="col-sm">
+                <div class="card text-white bg-secondary mb-3">
+                    <div class="card-header">Total finishers</div>
+                    <div class="card-body">
+                        <h1 class="card-title text-center">{{ metrics.total|number_format(0, '.', ' ') }}</h1>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        {% if evolution %}
+            <h2>Evolution</h2>
+            <div class="row">
+                <canvas id="evolutionChart"></canvas>
+                {% set datasets = [
+                    {'label': 'Finishers', 'data': evolution|map(e => e.total), 'backgroundColor': 'rgba(108, 117, 125, 0.7)', 'borderColor': '#6C757D', 'fill': true, 'yAxisID': 'y1', 'order': 4},
+                    {'label': 'Temps mini', 'data': evolution|map(e => e.min / 60), 'backgroundColor': '#198754', 'borderColor': '#198754', 'yAxisID': 'y', 'type': 'line', 'order': 1},
+                    {'label': 'Temps moyen', 'data': evolution|map(e => e.avg / 60), 'backgroundColor': '#0DCAF0', 'borderColor': '#0DCAF0', 'yAxisID': 'y', 'type': 'line', 'order': 2},
+                    {'label': 'Temps maxi', 'data': evolution|map(e => e.max / 60), 'backgroundColor': '#FFC107', 'borderColor': '#FFC107', 'yAxisID': 'y', 'type': 'line', 'order': 3},
+                ] %}
+                <script>
+                    const ctx = document.getElementById('evolutionChart').getContext('2d');
+                    const myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: {{ evolution|map(e => '' ~ e.x)|json_encode|raw }},
+                            datasets: {{ datasets|json_encode|raw }}
+                        },
+                        options: {
+                            responsive: true,
+                            spanGaps: true,
+                            plugins: {
+                                tooltip: {
+                                    mode: 'index',
+                                    position: 'average',
+                                    callbacks: {
+                                        label: function (tooltipItem, data) {
+                                            if ('y' === tooltipItem.dataset.yAxisID) {
+                                                const dateStr = new Date(parseInt(tooltipItem.formattedValue.replace(',', '.').replace(' ', '') * 60) * 1000).toISOString().substr(11, 8);
+                                                const duration = ('00' !== (hours = dateStr.substr(0, 2)) ? hours + 'h' : '') + dateStr.substr(3, 2) + '\'' + dateStr.substr(6, 2);
+
+                                                return tooltipItem.dataset.label + ': ' + duration;
+                                            }
+
+                                            return tooltipItem.dataset.label + ': ' + tooltipItem.formattedValue;
+                                        }
+                                    }
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                axis: 'x',
+                                intersect: false
+                            },
+                            hover: {
+                                mode: 'index',
+                                intersec: false
+                            },
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Années',
+                                        position: 'bottom'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Minutes',
+                                    },
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    min: 0
+                                },
+                                y1: {
+                                    title: {
+                                        display: true,
+                                        text: 'Finishers',
+                                    },
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                }
+                            }
+                        }
+                    });
+                </script>
+            </div>
+        {% endif %}
+
+        <h2>Breakpoints</h2>
+        <div class="row">
+            {% if 0 < breakpoints|length %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped caption-top">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" scope="col">
+                                    <select name="f[group]" class="form-select" onchange="document.getElementById('f_group').value = this.value;document.getElementById('form_search').submit();" style="min-width:100px;" >
+                                        <option value="" {{ not group ? 'selected="selected"' }}>Groupe</option>
+                                        <option value="year" {{ group == 'year' ? 'selected="selected"' }}>Saison</option>
+                                        <option value="gender" {{ group == 'gender' ? 'selected="selected"' }}>Sexe</option>
+                                    </select>
+                                </th>
+                                {% for key, value in breakpoints[0] %}
+                                    {% if key starts with 'nb_' %}
+                                        <th class="text-center" scope="col"><{{ (key|split('nb_', 2)[1] * 60)|time_format(false) }}</th>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for breakpoint in breakpoints %}
+                                <tr>
+                                    <td class="text-center">{{ breakpoint.x is defined ? breakpoint.x.value ?? breakpoint.x : '' }}</td>
+                                    {% for key, value in breakpoint %}
+                                        {% if key starts with 'nb_' %}
+                                            <td class="text-center">{{ value }}<br /><small class="text-muted">({{ (value * 100 / breakpoint.total)|number_format(2, ',') }}%)</small></td>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <button class="btn btn-primary d-block" onclick="document.getElementById('f_breakpoints').value = 1;document.getElementById('form_search').submit();">Calculer les breakpoints<small class="text-muted text-light">⏳</button>
+            {% endif %}
+        </div>
+
+        <br />
 
     </div>
 

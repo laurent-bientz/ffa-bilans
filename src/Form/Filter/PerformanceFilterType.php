@@ -11,6 +11,7 @@ use Symfony\Component\Cache\Adapter\PhpArrayAdapter;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -48,6 +49,10 @@ class PerformanceFilterType extends AbstractType
         // /Cache
 
         $builder
+            ->add('group', HiddenType::class)
+            ->add('breakpoints', HiddenType::class, [
+                'empty_data' => 0,
+            ])
             ->add('trial', EnumType::class, [
                 'label' => 'Épreuve',
                 'class' => Trial::class,

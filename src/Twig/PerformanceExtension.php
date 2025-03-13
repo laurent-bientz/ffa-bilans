@@ -14,8 +14,10 @@ class PerformanceExtension extends AbstractExtension
         ];
     }
 
-    public function timeFormat($value): ?string
+    public function timeFormat($value, bool $displaySeconds = true): ?string
     {
-        return gmdate("H\hi's", (int)$value);
+        return $displaySeconds
+            ? gmdate("H\hi's", (int)$value)
+            : gmdate("H\hi", (int)$value);
     }
 }
