@@ -29,12 +29,14 @@ class FfaScraper extends Command
             ->setDescription('Scrape the results for a given trial/year.')
             ->setDefinition(
                 [
-                    new InputArgument('id', InputArgument::REQUIRED, 'Trial id'),
+                    new InputArgument('id', InputArgument::REQUIRED, 'Trial id', null, [261, 271, 295, 299]),
                     new InputArgument('year', InputArgument::OPTIONAL, 'Year', date('Y')),
+                    new InputArgument('gender', InputArgument::OPTIONAL, 'Gender', null, ['M', 'F']),
                 ]
             )
-            ->addUsage(sprintf('%s', 295))
-            ->addUsage(sprintf('%s %s', 295, (new \DateTime())->modify('last year')->format('Y')));
+            ->addUsage(sprintf('%d', 295))
+            ->addUsage(sprintf('%d %d', 295, (new \DateTime())->modify('last year')->format('Y')))
+            ->addUsage(sprintf('%d %d %s', 295, (new \DateTime())->modify('2 years ago')->format('Y'), 'F'));
     }
 
     /**
@@ -45,7 +47,7 @@ class FfaScraper extends Command
         $io = new SymfonyStyle($input, $output);
         $time = time();
 
-        $nbScraped = ($this->extractor)($input->getArgument('id'), $input->getArgument('year'), $io);
+        $nbScraped = ($this->extractor)($input->getArgument('id'), $input->getArgument('year'), $input->getArgument('gender'), $io);
 
         $io->success(sprintf('%d results scraped in %d seconds.', $nbScraped, (time() - $time)));
 

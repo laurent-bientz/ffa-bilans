@@ -40,11 +40,12 @@ class Extractor
     public function __invoke(
         int $trialId,
         int $year,
+        ?string $gender = null,
         ?SymfonyStyle $io = null,
     ): int
     {
-        // scrape both genders
-        foreach(['M', 'F'] as $gender) {
+        // scrape wanted genders
+        foreach(array_intersect(['M', 'F'], null !== $gender ? [strtoupper($gender)] : ['M', 'F']) as $gender) {
             $io?->info(sprintf('Scrapping %s performances', 'F' === $gender ? 'women' : 'men'));
             $this->scrape($trialId, $year, $gender, 0, $io);
             $io?->progressFinish();

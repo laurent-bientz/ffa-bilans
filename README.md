@@ -34,9 +34,22 @@ Le site doit être visible dans le navigateur sur `http://localhost`.
 ## Scrape
 
 ```console
-docker-compose exec php php bin/console app:ffa:scrape {trialId} {year}
+docker-compose exec php php bin/console app:ffa:scrape {trialId} [{year}] [{gender}]
 ```
 
 ## Demo
 
 ➡️ [https://ffa.bientz.com](https://ffa.bientz.com)
+
+## Crontabs
+
+```console
+0 0 1 9 * cd {docroot} && php bin/console app:ffa:scrape 299 $(date +%Y)
+15 0 1 9 * cd {docroot} && php bin/console app:ffa:scrape 295 $(date +%Y) M
+30 0 1 9 * cd {docroot} && php bin/console app:ffa:scrape 295 $(date +%Y) F
+45 0 1 9 * cd {docroot} && php bin/console app:ffa:scrape 271 $(date +%Y) M
+0 1 1 9 * cd {docroot} && php bin/console app:ffa:scrape 271 $(date +%Y) F
+15 1 1 9 * cd {docroot} && php bin/console app:ffa:scrape 261 $(date +%Y) M
+30 1 1 9 * cd {docroot} && php bin/console app:ffa:scrape 261 $(date +%Y) F
+45 1 1 9 * cd {docroot} && php bin/console c:c && /etc/init.d/php8.4-fpm restart (if using fpm with opcache)
+```
