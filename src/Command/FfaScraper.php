@@ -35,7 +35,6 @@ class FfaScraper extends Command
             )
             ->addUsage(sprintf('%s', 295))
             ->addUsage(sprintf('%s %s', 295, (new \DateTime())->modify('last year')->format('Y')));
-        ;
     }
 
     /**

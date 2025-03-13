@@ -17,11 +17,11 @@ enum Trial: string
     public static function getLabel(Trial $trial): string
     {
         return match ($trial) {
-            self::D_5K => '5kms',
-            self::D_10K => '10kms',
+            self::D_5K => '5k',
+            self::D_10K => '10k',
             self::D_21K => 'Semi-Marathon',
             self::D_42K => 'Marathon',
-            self::D_100K => '100kms',
+            self::D_100K => '100k',
         };
     }
 

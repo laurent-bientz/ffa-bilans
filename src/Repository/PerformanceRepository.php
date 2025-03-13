@@ -28,7 +28,7 @@ class PerformanceRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('p')
             ->select('DISTINCT(p.year)')
             ->where('p.year IS NOT NULL')
-            ->orderBy('p.year', 'ASC')
+            ->orderBy('p.year', 'DESC')
             ->getQuery()
             ->getResult(AbstractQuery::HYDRATE_SCALAR_COLUMN);
     }
@@ -94,7 +94,6 @@ class PerformanceRepository extends ServiceEntityRepository
             $qb->addSelect('p.' . $group . ' AS x')
                 ->groupBy('p.' . $group)
                 ->orderBy('p.' . $group, 'ASC');
-            ;
         }
 
         return (null !== $group)
@@ -135,7 +134,6 @@ class PerformanceRepository extends ServiceEntityRepository
             $qb->addSelect('p.' . $group . ' AS x')
                 ->groupBy('p.' . $group)
                 ->orderBy('p.' . $group, 'ASC');
-            ;
         }
 
         return $qb->getQuery()->getResult(AbstractQuery::HYDRATE_ARRAY);

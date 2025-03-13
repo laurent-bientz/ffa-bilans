@@ -2,10 +2,10 @@
 
 namespace App\Controller;
 
-use App\Entity\Performance;
 use App\Enum\Trial;
+use App\Ffa\GetBreakpoints;
+use App\Ffa\GetMetrics;
 use App\Form\Filter\PerformanceFilterType;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,7 +15,8 @@ class HomeController extends AbstractController
 {
     #[Route('/', name: 'app_home_index')]
     public function index(
-        EntityManagerInterface $em,
+        GetMetrics $getMetrics,
+        GetBreakpoints $getBreakpoints,
         Request $request,
     ): Response
     {
@@ -27,9 +28,9 @@ class HomeController extends AbstractController
         return $this->render('pages/home/index.html.twig', [
             'formSearch' => $formSearch->createView(),
             'group' => $formSearch->get('group')->getData(),
-            'metrics' => $em->getRepository(Performance::class)->getMetrics($request->query->all($formSearch->getName()) ?? []),
-            'evolution' => $em->getRepository(Performance::class)->getMetrics($request->query->all($formSearch->getName()) ?? [], 'year'),
-            'breakpoints' => '1' === $formSearch->get('breakpoints')->getData() ? $em->getRepository(Performance::class)->getBreakpoints($request->query->all($formSearch->getName()) ?? [], $formSearch->get('group')->getData()) : [],
+            'metrics' => $getMetrics($request->query->all($formSearch->getName()) ?? []),
+            'evolution' => $getMetrics($request->query->all($formSearch->getName()) ?? [], 'year'),
+            'breakpoints' => 1 === (int)$formSearch->get('breakpoints')->getData() ? $getBreakpoints($request->query->all($formSearch->getName()) ?? []) : [],
         ]);
     }
 }

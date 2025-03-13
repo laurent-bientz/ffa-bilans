@@ -8,7 +8,7 @@ enum Gender: string
 
     case WOMAN = 'woman';
 
-    public static function getLabel(Gender $gender)
+    public static function getLabel(Gender $gender): string
     {
         return match ($gender) {
             self::MAN => 'Hommes',

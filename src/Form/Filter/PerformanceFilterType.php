@@ -17,12 +17,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class PerformanceFilterType extends AbstractType
 {
-    private int $cacheLifetime = 5 * 60; # seconds
-
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly string                 $projectDir,
         private readonly string                 $projectEnv,
+        private readonly int                    $cacheTtl,
     ) {}
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -32,7 +31,7 @@ class PerformanceFilterType extends AbstractType
             mkdir($cacheDir, 0777);
         }
         $cache = new PhpArrayAdapter($cachePath = ($cacheDir . DIRECTORY_SEPARATOR . 'performance-filters.php'), new FilesystemAdapter());
-        if ((file_exists($cachePath) && $this->cacheLifetime < time() - filemtime($cachePath)) ||
+        if ((file_exists($cachePath) && $this->cacheTtl < time() - filemtime($cachePath)) ||
             null === $cache->getItem('data')->get()) {
             $cache->warmUp([
                 'data' => [
