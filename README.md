@@ -36,3 +36,7 @@ Le site doit être visible dans le navigateur sur `http://localhost`.
 ```console
 docker-compose exec php php bin/console app:ffa:scrape {trialId} {year}
 ```
+
+## Demo
+
+➡️ [https://ffa.bientz.com](https://ffa.bientz.com)
