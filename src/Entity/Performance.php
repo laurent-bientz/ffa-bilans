@@ -26,6 +26,7 @@ class Performance
 
     #[ORM\Column]
     #[Assert\NotNull]
+    #[Assert\GreaterThan(0)]
     private ?int $time = null;
 
     #[ORM\Column(length: 10)]
