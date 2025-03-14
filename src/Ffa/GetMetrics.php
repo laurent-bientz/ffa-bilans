@@ -16,15 +16,17 @@ class GetMetrics
         private readonly int                    $cacheTtl,
     ) {}
 
-    public function __invoke(array $filters, ?string $group = null): array
+    public function __invoke(array $filters, ?string $group = null, bool $forceWarmUp = false): array
     {
         // Cache
+        ksort($filters);
         $cacheSuffix = implode('-', array_filter(array_map(fn ($key, $value) => $value ? $key . '-' . $value : null, array_keys($filters), array_values($filters)), fn ($item) => $item !== null)) . (null !== $group ? '-' . $group : '');
         if (!is_dir($cacheDir = ($this->projectDir . '/var/cache/' . $this->projectEnv . '/doctrine'))) {
             mkdir($cacheDir, 0777);
         }
         $cache = new PhpArrayAdapter($cachePath = ($cacheDir . DIRECTORY_SEPARATOR . 'performance-metrics_' . $cacheSuffix . '.php'), new FilesystemAdapter());
-        if ((file_exists($cachePath) && $this->cacheTtl < time() - filemtime($cachePath)) ||
+        if (true === $forceWarmUp ||
+            (file_exists($cachePath) && $this->cacheTtl < time() - filemtime($cachePath)) ||
             null === $cache->getItem('data')->get()) {
             $cache->warmUp([
                 'data' => $this->em->getRepository(Performance::class)->getMetrics($filters, $group)

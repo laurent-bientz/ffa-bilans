@@ -51,5 +51,5 @@ docker-compose exec php php bin/console app:ffa:scrape {trialId} [{year}] [{gend
 0 1 1 9 * cd {docroot} && php bin/console app:ffa:scrape 271 $(date +%Y) F
 15 1 1 9 * cd {docroot} && php bin/console app:ffa:scrape 261 $(date +%Y) M
 30 1 1 9 * cd {docroot} && php bin/console app:ffa:scrape 261 $(date +%Y) F
-45 1 1 9 * cd {docroot} && php bin/console c:c && /etc/init.d/php8.4-fpm restart (if using fpm with opcache)
+45 1 1 9 * cd {docroot} && php bin/console c:c && php bin/console app:cache:warmup && /etc/init.d/php8.4-fpm restart
 ```
