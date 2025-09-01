@@ -41,13 +41,14 @@ class Extractor
         int $trialId,
         int $year,
         ?string $gender = null,
+        int $page = 0,
         ?SymfonyStyle $io = null,
     ): int
     {
         // scrape wanted genders
         foreach(array_intersect(['M', 'F'], null !== $gender ? [strtoupper($gender)] : ['M', 'F']) as $gender) {
             $io?->info(sprintf('Scrapping %s performances', 'F' === $gender ? 'women' : 'men'));
-            $this->scrape($trialId, $year, $gender, 0, $io);
+            $this->scrape($trialId, $year, $gender, $page, $io, 0 !== $page);
             $io?->progressFinish();
         }
 
@@ -60,6 +61,7 @@ class Extractor
         string $gender = 'M',
         int $page = 0,
         ?SymfonyStyle $io = null,
+        bool $forceProgressStart = false,
     ): void
     {
         try {
@@ -67,8 +69,8 @@ class Extractor
             $crawler = new Crawler($response->getContent());
             $nbTotalResults = !empty($totalResults = $crawler->filterXPath('//div[contains(@class, "selector")]/p[contains(@class, "text-blue-tertiary")]')->text()) ? (int)(new UnicodeString($totalResults))->trimEnd(" résultats")->toString() : 0;
 
-            if (0 === $page) {
-                $io?->progressStart($nbTotalResults);
+            if (0 === $page || $forceProgressStart) {
+                $io?->progressStart($nbTotalResults - ($forceProgressStart ? $this->nbResultsPerPage * $page : 0));
             }
             $results = $crawler->filterXPath('//table[@id="ctnBilans"]/tbody/tr[not(contains(@class, "hide")) and position() > 4]')->each(function (Crawler $node) use ($trialId, $year, $gender, $io) {
                 if (9 < $node->filterXPath('//td')->count()) {
@@ -110,6 +112,7 @@ class Extractor
 
                         // validate it
                         $this->validatePerformance($performance);
+
                         // garbage collector
                         $this->em->detach($performance);
                         unset($performance);
@@ -170,10 +173,9 @@ class Extractor
                 }
                 // camelCase to `snake_case`
                 $data['`' . InflectorFactory::create()->build()->tableize($performanceProperty) . '`'] = (null !== $performanceValue) ? trim($performanceValue) : null;
-
-                $this->nbScraped++;
             }
 
+            $this->nbScraped++;
             $this->performances[] = $data;
         }
         else {

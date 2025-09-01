@@ -32,6 +32,7 @@ class FfaScraper extends Command
                     new InputArgument('id', InputArgument::REQUIRED, 'Trial id', null, [261, 271, 295, 299]),
                     new InputArgument('year', InputArgument::OPTIONAL, 'Year', date('Y')),
                     new InputArgument('gender', InputArgument::OPTIONAL, 'Gender', null, ['M', 'F']),
+                    new InputArgument('page', InputArgument::OPTIONAL, 'Page', 0),
                 ]
             )
             ->addUsage(sprintf('%d', 295))
@@ -47,7 +48,7 @@ class FfaScraper extends Command
         $io = new SymfonyStyle($input, $output);
         $time = time();
 
-        $nbScraped = ($this->extractor)($input->getArgument('id'), $input->getArgument('year'), $input->getArgument('gender'), $io);
+        $nbScraped = ($this->extractor)($input->getArgument('id'), $input->getArgument('year'), $input->getArgument('gender'), $input->getArgument('page'), $io);
 
         $io->success(sprintf('%d results scraped in %d seconds.', $nbScraped, (time() - $time)));
 
