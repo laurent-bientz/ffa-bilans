@@ -72,47 +72,51 @@ class Extractor
             }
             $results = $crawler->filterXPath('//table[@id="ctnBilans"]/tbody/tr[not(contains(@class, "hide")) and position() > 4]')->each(function (Crawler $node) use ($trialId, $year, $gender, $io) {
                 if (9 < $node->filterXPath('//td')->count()) {
-                    $formattedTime = $node->filterXPath('//td[2]')->filterXPath('//b')->text();
-                    $formattedDate = $node->filterXPath('//td[8]')->text();
-                    $formattedBirth = !empty($birth = $node->filterXPath('//td[7]')->text()) && 1 < \count($birth = explode("/", $birth)) ? $birth[1] : null;
-                    $formattedCategory = !empty($birth = $node->filterXPath('//td[7]')->text()) && 0 < \count($birth = explode("/", $birth)) ? $birth[0] : null;
-
-                    $properDate = new \DateTime(implode('-', array_reverse(explode('/', $formattedDate))));
-
                     try {
-                        if (!str_contains($formattedTime, 'h')) {
-                            $formattedTime = '0h' . $formattedTime;
+                        $formattedTime = $node->filterXPath('//td[2]')->filterXPath('//b')->text();
+                        $formattedDate = $node->filterXPath('//td[8]')->text();
+                        $formattedBirth = !empty($birth = $node->filterXPath('//td[7]')->text()) && 1 < \count($birth = explode("/", $birth)) ? $birth[1] : null;
+                        $formattedCategory = !empty($birth = $node->filterXPath('//td[7]')->text()) && 0 < \count($birth = explode("/", $birth)) ? $birth[0] : null;
+
+                        $properDate = new \DateTime(implode('-', array_reverse(explode('/', $formattedDate))));
+
+                        try {
+                            if (!str_contains($formattedTime, 'h')) {
+                                $formattedTime = '0h' . $formattedTime;
+                            }
+                            $properTime = new \DateTime(date('Y-m-d') . ' ' . str_replace(['h', '\''], ':', (new UnicodeString($formattedTime))->trimEnd("''")));
+                        } catch (\Exception $e) {
+                            $properTime = new \DateTime("today");
+
+                            # TODO: log date error
                         }
-                        $properTime = new \DateTime(date('Y-m-d') . ' ' . str_replace(['h', '\''], ':', (new UnicodeString($formattedTime))->trimEnd("''")));
+                        $timeDiff = $properTime->diff(new \DateTime("today"));
+
+                        // prepare performance
+                        $performance = (new Performance())
+                            ->setDate($properDate)
+                            ->setTime(($timeDiff->h * 3600) + ($timeDiff->i * 60) + $timeDiff->s)
+                            ->setTimeFormatted(sprintf("%02dh%02d'%02d", $timeDiff->h, $timeDiff->i, $timeDiff->s))
+                            ->setLocation($node->filterXPath('//td[9]')->text())
+                            ->setGender('F' === $gender ? Gender::WOMAN : Gender::MAN)
+                            ->setName($node->filterXPath('//td[3]')->text())
+                            ->setBirth(!empty($formattedBirth) ? ($formattedBirth > (date('y') - $this->minimumAge) ? '19' . $formattedBirth : '20' . $formattedBirth) : null)
+                            ->setCategory($formattedCategory)
+                            ->setClub(!empty($club = $node->filterXPath('//td[4]')->text()) && 'nl la veille de la compétition' !== strtolower($club) ? trim((new UnicodeString($club))->trimEnd("*")) : null)
+                            ->setLeague(!empty($league = $node->filterXPath('//td[5]')->text()) ? $league : null)
+                            ->setZip(!empty($zip = $node->filterXPath('//td[6]')->text()) ? $zip : null)
+                            ->setTrial($trialId)
+                            ->setYear($year);
+
+                        // validate it
+                        $this->validatePerformance($performance);
+                        // garbage collector
+                        $this->em->detach($performance);
+                        unset($performance);
                     }
                     catch (\Exception $e) {
-                        $properTime = new \DateTime("today");
-
-                        # TODO: log date error
+                        // skip...
                     }
-                    $timeDiff = $properTime->diff(new \DateTime("today"));
-
-                    // prepare performance
-                    $performance = (new Performance())
-                        ->setDate($properDate)
-                        ->setTime(($timeDiff->h * 3600) + ($timeDiff->i * 60) + $timeDiff->s)
-                        ->setTimeFormatted(sprintf("%02dh%02d'%02d", $timeDiff->h, $timeDiff->i, $timeDiff->s))
-                        ->setLocation($node->filterXPath('//td[9]')->text())
-                        ->setGender('F' === $gender ? Gender::WOMAN : Gender::MAN)
-                        ->setName($node->filterXPath('//td[3]')->text())
-                        ->setBirth(!empty($formattedBirth) ? ($formattedBirth > (date('y') - $this->minimumAge) ? '19' . $formattedBirth : '20' . $formattedBirth) : null)
-                        ->setCategory($formattedCategory)
-                        ->setClub(!empty($club = $node->filterXPath('//td[4]')->text()) && 'nl la veille de la compétition' !== strtolower($club) ? trim((new UnicodeString($club))->trimEnd("*")) : null)
-                        ->setLeague(!empty($league = $node->filterXPath('//td[5]')->text()) ? $league : null)
-                        ->setZip(!empty($zip = $node->filterXPath('//td[6]')->text()) ? $zip : null)
-                        ->setTrial($trialId)
-                        ->setYear($year);
-
-                    // validate it
-                    $this->validatePerformance($performance);
-                    // garbage collector
-                    $this->em->detach($performance);
-                    unset($performance);
 
                     $io?->progressAdvance();
 
